@@ -478,6 +478,70 @@
   .lb img{max-width:min(1000px,92vw);max-height:86vh;border-radius:18px;box-shadow:0 40px 100px rgba(0,0,0,.5)}
   .lb-close{position:absolute;top:24px;right:30px;font-size:34px;color:#F7EFE2}
 
+  /* ---------- payment ---------- */
+  .pay-methods{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
+  .pm{
+    border:1.5px solid var(--line);background:var(--card);border-radius:16px;
+    padding:16px 14px;text-align:left;transition:.25s;display:flex;flex-direction:column;gap:3px;
+  }
+  .pm small{font-size:11.5px;color:#9c7b64;font-weight:600}
+  .pm .pm-ico{font-size:22px;margin-bottom:4px}
+  .pm b{font-size:14.5px;color:var(--choco)}
+  .pm:hover{border-color:var(--caramel)}
+  .pm.active{border-color:var(--caramel);background:#fff;box-shadow:0 10px 24px -14px rgba(185,138,94,.65)}
+  .card-vis{
+    background:linear-gradient(120deg,#2C160C,#46281A 55%,#5E3A24);
+    border-radius:18px;padding:22px;color:#F7EFE2;margin-bottom:18px;
+    position:relative;overflow:hidden;box-shadow:var(--shadow);
+  }
+  .card-vis::before{
+    content:'';position:absolute;width:170px;height:170px;border-radius:50%;
+    background:rgba(217,188,147,.12);top:-70px;right:-50px;
+  }
+  .card-vis::after{
+    content:'';position:absolute;width:120px;height:120px;border-radius:50%;
+    background:rgba(217,188,147,.08);bottom:-60px;left:-30px;
+  }
+  .cv-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;position:relative;z-index:1}
+  .cv-chip{width:42px;height:31px;border-radius:7px;background:linear-gradient(135deg,#E7CE9F,#B98A5E);display:inline-block;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+  .cv-brand{font-style:italic;font-weight:800;letter-spacing:.08em;font-size:17px;transition:.2s}
+  .cv-num{
+    font-size:clamp(16px,5vw,20px);letter-spacing:.12em;font-weight:700;
+    margin:8px 0 18px;position:relative;z-index:1;white-space:nowrap;
+  }
+  .cv-bottom{display:flex;justify-content:space-between;gap:12px;position:relative;z-index:1}
+  .cv-bottom span{display:block;font-size:9px;letter-spacing:.18em;opacity:.6;font-weight:700;margin-bottom:2px}
+  .cv-bottom b{font-size:13.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .pay-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .secure-note{font-size:12px;font-weight:700;color:var(--caramel);text-align:center;margin-top:6px}
+  .spinner{
+    width:15px;height:15px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
+    border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:9px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .checkout-btn:disabled{opacity:.7;cursor:wait;transform:none!important}
+  .sms-box{text-align:center;padding:24px 8px}
+  .sms-box .sms-ico{font-size:44px;margin-bottom:10px}
+  .sms-box h4{font-family:'Playfair Display',serif;font-size:22px;color:var(--choco)}
+  .sms-box p{font-size:13.5px;color:#7a5b46;font-weight:600;margin-top:6px}
+  .sms-box input{
+    margin:20px auto 10px;display:block;width:210px;text-align:center;font-size:23px;
+    letter-spacing:.28em;padding:12px;border-radius:14px;border:1.5px solid var(--line);
+    font-weight:800;color:var(--choco);outline:none;background:var(--card);font-family:inherit;transition:.25s;
+  }
+  .sms-box input:focus{border-color:var(--caramel);box-shadow:0 0 0 4px rgba(185,138,94,.15)}
+  .demo-hint{font-size:11.5px!important;color:#b08d6f!important}
+  .pay-line{
+    display:inline-block;background:var(--bg2);border:1px dashed var(--caramel);
+    padding:8px 18px;border-radius:999px;font-weight:800;font-size:13px;color:var(--choco);margin-bottom:14px;
+  }
+  .paypills{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .paypills .pp-label{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(247,239,226,.5);font-weight:700;margin-right:4px}
+  .paypill{
+    border:1.5px solid rgba(247,239,226,.28);border-radius:9px;padding:6px 14px;
+    font-weight:800;font-size:11.5px;letter-spacing:.1em;color:var(--gold-soft);font-style:normal;
+  }
+
   /* ---------- responsive ---------- */
   @media(max-width:1020px){
     .menu-grid{grid-template-columns:repeat(2,1fr)}
@@ -500,6 +564,8 @@
   }
   @media(max-width:600px){
     .menu-grid{grid-template-columns:1fr}
+    .pay-methods{grid-template-columns:1fr}
+    .cv-num{letter-spacing:.05em;font-size:15px}
     .steps{grid-template-columns:1fr}
     .hero-stats div{padding-right:22px;margin-right:22px}
     .hero-stats b{font-size:24px}
@@ -762,6 +828,15 @@
       </nav>
       <a href="tel:+774072718" style="font-weight:800;color:var(--gold-soft);font-size:16px">77 407 27 18</a>
     </div>
+    <div style="margin-top:38px;display:flex;justify-content:center">
+      <div class="paypills">
+        <span class="pp-label">To'lov tizimlari:</span>
+        <span class="paypill">UZCARD</span>
+        <span class="paypill">HUMO</span>
+        <span class="paypill">VISA</span>
+        <span class="paypill">MASTERCARD</span>
+      </div>
+    </div>
     <div class="copy">© 2026 KINDSTEVEN — Shirinliklar restorani. Barcha huquqlar himoyalangan.</div>
   </div>
 </footer>
@@ -870,8 +945,33 @@ filters.addEventListener('click', e=>{
 
 /* ============ CART ============ */
 let cart = [];
-let drawerView = 'cart'; // cart | form | success
+let drawerView = 'cart'; // cart | form | payment | sms | success
 let lastOrderNo = '';
+let cust = {};            // buyurtmachi ma'lumotlari
+let payMethod = 'card';   // card | cash
+let curBrand = null;      // uzcard | humo | visa | mastercard
+let curNum = '';          // karta raqami (faqat raqamlar)
+let lastPay = null;       // yakuniy to'lov ma'lumoti
+
+const BRANDS = {
+  uzcard:     {name:'UZCARD',     color:'#9BCBFF', pattern:/^8600/,        hint:'8600 bilan boshlanadi'},
+  humo:       {name:'HUMO',       color:'#E3E9EF', pattern:/^9860/,        hint:'9860 bilan boshlanadi'},
+  visa:       {name:'VISA',       color:'#FFD98A', pattern:/^4/,           hint:'4 bilan boshlanadi'},
+  mastercard: {name:'MASTERCARD', color:'#FFB3A1', pattern:/^(5[1-5]|2[2-7])/, hint:'5 yoki 2 bilan boshlanadi'},
+};
+function detectBrand(n){
+  for(const k in BRANDS){ if(BRANDS[k].pattern.test(n)) return k; }
+  return null;
+}
+function luhn(n){
+  let s=0, dbl=false;
+  for(let i=n.length-1;i>=0;i--){
+    let d=+n[i];
+    if(dbl){ d*=2; if(d>9)d-=9; }
+    s+=d; dbl=!dbl;
+  }
+  return s%10===0;
+}
 
 const drawer = document.getElementById('drawer');
 const drawerBg = document.getElementById('drawerBg');
@@ -915,6 +1015,8 @@ function renderCartBadge(){
 function renderDrawer(){
   if(drawerView==='cart') renderCartView();
   else if(drawerView==='form') renderFormView();
+  else if(drawerView==='payment') renderPaymentView();
+  else if(drawerView==='sms') renderSmsView();
   else renderSuccessView();
 }
 
@@ -971,11 +1073,11 @@ function renderFormView(){
       <div class="field"><label>Izoh</label><textarea id="fNote" placeholder="Bayram yozuvi, allotment va boshqalar..."></textarea></div>
     </div>`;
   drawerFoot.innerHTML = `
-    <div class="tot-row total"><span>To'lov (kuryerga)</span><b>${fmt(total)}</b></div>
-    <button class="btn btn-dark checkout-btn" onclick="submitOrder()">✓ Buyurtmani tasdiqlash</button>`;
+    <div class="tot-row total"><span>Jami</span><b>${fmt(total)}</b></div>
+    <button class="btn btn-dark checkout-btn" onclick="submitForm()">To'lov usulini tanlash →</button>`;
 }
 
-function submitOrder(){
+function submitForm(){
   const name = document.getElementById('fName').value.trim();
   const phone = document.getElementById('fPhone').value.trim();
   const addr = document.getElementById('fAddr').value.trim();
@@ -983,21 +1085,171 @@ function submitOrder(){
     toast('Iltimos, ism, telefon va manzilni kiriting ⚠️');
     return;
   }
+  cust = {
+    name, phone, addr,
+    time: document.getElementById('fTime').value,
+    note: document.getElementById('fNote').value.trim(),
+  };
+  drawerView = 'payment';
+  renderDrawer();
+}
+
+/* ---------- TO'LOV ---------- */
+function setPayMethod(m){ payMethod = m; renderDrawer(); }
+
+function renderPaymentView(){
+  drawerTitle.textContent = 'To\'lov';
+  const {total} = cartTotals();
+  const cardFields = payMethod==='card' ? `
+    <div class="card-vis">
+      <div class="cv-top">
+        <span class="cv-chip"></span>
+        <b class="cv-brand" id="cvBrand" style="color:#F7EFE2">KARTA</b>
+      </div>
+      <div class="cv-num" id="cvNum">•••• •••• •••• ••••</div>
+      <div class="cv-bottom">
+        <div><span>KARTA EGASI</span><b id="cvHolder">ISIM FAMILIYA</b></div>
+        <div><span>AMAL QILISH</span><b id="cvExp">MM/YY</b></div>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Karta raqami</label>
+        <input id="cNum" inputmode="numeric" autocomplete="cc-number" maxlength="19" placeholder="0000 0000 0000 0000" oninput="onCardNum(this.value)">
+      </div>
+      <div class="pay-row">
+        <div class="field"><label>Muddati</label><input id="cExp" inputmode="numeric" autocomplete="cc-exp" maxlength="5" placeholder="MM/YY" oninput="onCardExp(this.value)"></div>
+        <div class="field"><label>CVV</label><input id="cCvv" type="password" inputmode="numeric" maxlength="3" placeholder="•••" oninput="onCardCvv(this.value)"></div>
+      </div>
+      <div class="field"><label>Karta egasi ismi</label><input id="cHolder" autocomplete="cc-name" placeholder="ALEXANDER KIND" oninput="onCardHolder(this.value)"></div>
+    </div>
+    <div class="secure-note">🔒 SSL shifrlash — karta ma'lumotlaringiz saqlanmaydi</div>`
+  : `
+    <div class="dcard" style="background:var(--card)">
+      <h4>💵 Kuryerga naqd to'lov</h4>
+      <p>Buyurtma yetib kelganda kuryerga naqd pul berishingiz mumkin. Kerak bo'lsa, qaytarim puli bilan keladi.</p>
+    </div>`;
+
+  drawerBody.innerHTML = `
+    <button class="back-link" onclick="drawerView='form';renderDrawer()">← Ma'lumotlarga qaytish</button>
+    <div class="pay-methods">
+      <button class="pm ${payMethod==='card'?'active':''}" onclick="setPayMethod('card')">
+        <span class="pm-ico">💳</span><b>Onlayn karta</b><small>Uzcard · Humo · Visa</small>
+      </button>
+      <button class="pm ${payMethod==='cash'?'active':''}" onclick="setPayMethod('cash')">
+        <span class="pm-ico">💵</span><b>Kuryerga naqd</b><small>yetkazishda to'lang</small>
+      </button>
+    </div>
+    ${cardFields}`;
+
+  drawerFoot.innerHTML = payMethod==='card'
+    ? `<div class="tot-row total"><span>To'lanadigan summa</span><b>${fmt(total)}</b></div>
+       <button id="payBtn" class="btn btn-dark checkout-btn" onclick="submitPayment()">🔒 ${fmt(total)} — to'lash</button>`
+    : `<div class="tot-row total"><span>Yetkazishda to'lov</span><b>${fmt(total)}</b></div>
+       <button id="payBtn" class="btn btn-dark checkout-btn" onclick="submitPayment()">✓ Buyurtmani yakunlash</button>`;
+}
+
+/* karta inputlari — formatlash va jonli preview */
+function onCardNum(v){
+  const d = v.replace(/\D/g,'').slice(0,16);
+  curNum = d;
+  curBrand = detectBrand(d);
+  document.getElementById('cNum').value = (d.replace(/(.{4})/g,'$1 ')).trim();
+  const parts = [];
+  for(let i=0;i<16;i+=4) parts.push((d.slice(i,i+4)+'••••').slice(0,4));
+  document.getElementById('cvNum').textContent = parts.join(' ');
+  const b = document.getElementById('cvBrand');
+  b.textContent = curBrand ? BRANDS[curBrand].name : 'KARTA';
+  b.style.color = curBrand ? BRANDS[curBrand].color : '#F7EFE2';
+}
+function onCardExp(v){
+  let d = v.replace(/\D/g,'').slice(0,4);
+  if(d.length>2) d = d.slice(0,2)+'/'+d.slice(2);
+  document.getElementById('cExp').value = d;
+  document.getElementById('cvExp').textContent = d || 'MM/YY';
+}
+function onCardCvv(v){
+  document.getElementById('cCvv').value = v.replace(/\D/g,'').slice(0,3);
+}
+function onCardHolder(v){
+  const u = v.toUpperCase();
+  document.getElementById('cHolder').value = u;
+  document.getElementById('cvHolder').textContent = u || 'ISIM FAMILIYA';
+}
+
+function submitPayment(){
+  const btn = document.getElementById('payBtn');
+  if(payMethod==='cash'){
+    finalizeOrder({method:'cash'});
+    return;
+  }
+  const num = curNum;
+  const exp = document.getElementById('cExp').value;
+  const cvv = document.getElementById('cCvv').value;
+  const holder = document.getElementById('cHolder').value.trim();
+
+  if(!curBrand){ toast('Karta turi tanib olinmadi — Uzcard: 8600..., Humo: 9860..., Visa: 4...'); return; }
+  if(num.length!==16){ toast('Karta raqami 16 raqamdan iborat bo\'lishi kerak'); return; }
+  if(!luhn(num)){ toast('Karta raqami noto\'g\'ri — tekshirib ko\'ring ⚠️'); return; }
+  if(!/^(0[1-9]|1[0-2])\/\d{2}$/.test(exp)){ toast('Muddatni MM/YY formatida kiriting'); return; }
+  const mm=+exp.slice(0,2), yy=+exp.slice(3,5);
+  const now=new Date(), cy=now.getFullYear()%100, cm=now.getMonth()+1;
+  if(yy<cy || (yy===cy && mm<cm)){ toast('Bu karta muddati tugagan ⚠️'); return; }
+  if(cvv.length!==3){ toast('CVV — kartaning orqa tomonidagi 3 raqam'); return; }
+  if(!holder){ toast('Karta egasi ismini kiriting'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> To\'lov yechilmoqda...';
+  setTimeout(()=>{ drawerView='sms'; renderDrawer(); }, 1800);
+}
+
+/* ---------- SMS TASDIQLASH (3-D Secure) ---------- */
+function renderSmsView(){
+  drawerTitle.textContent = 'Tasdiqlash';
+  const bname = curBrand ? BRANDS[curBrand].name : 'KARTA';
+  drawerBody.innerHTML = `
+    <div class="sms-box">
+      <div class="sms-ico">📲</div>
+      <h4>SMS kodni kiriting</h4>
+      <p><b>${bname}</b> karta uchun <b>${cust.phone||''}</b> raqamiga 6 xonali kod yubordik</p>
+      <input id="smsCode" inputmode="numeric" maxlength="6" placeholder="••••••" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      <p class="demo-hint">Demo rejim — istalgan 6 raqamni kiriting</p>
+    </div>`;
+  drawerFoot.innerHTML = `
+    <button id="smsBtn" class="btn btn-dark checkout-btn" onclick="confirmSms()">✓ To'lovni tasdiqlash</button>`;
+}
+function confirmSms(){
+  const code = document.getElementById('smsCode').value;
+  if(code.length!==6){ toast('6 xonali SMS kodni kiriting'); return; }
+  const btn = document.getElementById('smsBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Tasdiqlanmoqda...';
+  setTimeout(()=>{
+    finalizeOrder({method:'card', brand:curBrand, last4:curNum.slice(-4)});
+  }, 1200);
+}
+
+function finalizeOrder(payInfo){
   lastOrderNo = 'KS-' + Math.floor(1000 + Math.random()*9000);
-  drawerView = 'success';
+  lastPay = payInfo;
   cart = [];
   renderCartBadge();
+  drawerView = 'success';
   renderDrawer();
 }
 
 function renderSuccessView(){
   drawerTitle.textContent = 'Buyurtma qabul qilindi';
+  const payLine = lastPay && lastPay.method==='card'
+    ? `💳 ${BRANDS[lastPay.brand].name} •••• ${lastPay.last4} — To'landi ✓`
+    : `💵 Kuryerga naqd to'lov`;
   drawerBody.innerHTML = `
     <div class="order-success">
       <div class="ok">✓</div>
       <h4>Rahmat, buyurtmangiz qabul qilindi!</h4>
       <div class="order-num">${lastOrderNo}</div>
-      <p>Operatorimiz tez orada siz bilan bog'lanib, buyurtmani tasdiqlaydi. Shirinliklarni kutib qoling! 🧁</p>
+      <div class="pay-line">${payLine}</div>
+      <p>Operatorimiz tez orada <b>${cust.name||''}</b> bilan bog'lanib, buyurtmani tasdiqlaydi. Shirinliklarni kutib qoling! 🧁</p>
     </div>`;
   drawerFoot.innerHTML = `
     <a href="${PHONE_LINK}" class="btn btn-dark checkout-btn">📞 ${PHONE} — qo'ng'iroq</a>
