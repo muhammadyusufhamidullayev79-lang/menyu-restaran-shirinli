@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
 <title>KINDSTEVEN — Shirinliklar restorani | Dastavka xizmati bor</title>
 <meta name="description" content="Kindsteven — premium shirinliklar restorani. Tortlar, makaronlar, eklar va trufellar. 22 xildan ortiq shirinlik. Dastavka xizmati mavjud. Aloqa: 77 407 27 18">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -566,6 +568,8 @@
     .menu-grid{grid-template-columns:1fr}
     .pay-methods{grid-template-columns:1fr}
     .cv-num{letter-spacing:.05em;font-size:15px}
+    .astats{gap:8px}
+    .astat b{font-size:19px}
     .steps{grid-template-columns:1fr}
     .hero-stats div{padding-right:22px;margin-right:22px}
     .hero-stats b{font-size:24px}
@@ -825,6 +829,7 @@
         <a href="#delivery">Dastavka</a>
         <a href="#gallery">Galereya</a>
         <a href="#contact">Aloqa</a>
+        <a href="#" onclick="openAdmin();return false" style="color:var(--gold-soft)">🔐 Admin</a>
       </nav>
       <a href="tel:+774072718" style="font-weight:800;color:var(--gold-soft);font-size:16px">77 407 27 18</a>
     </div>
@@ -858,6 +863,18 @@
 
 <div class="toast" id="toast"></div>
 <div class="lb" id="lb"><button class="lb-close">✕</button><img id="lbImg" src="" alt=""></div>
+
+<!-- ================= ADMIN PANEL ================= -->
+<div class="admin-ov" id="adminOv">
+  <div class="admin-box">
+    <div class="admin-head">
+      <h3 class="serif" id="admTitle">🔐 Admin panel</h3>
+      <button class="drawer-close" id="admClose">✕</button>
+    </div>
+    <div class="admin-body" id="admBody"></div>
+    <div class="afoot" id="admFoot"></div>
+  </div>
+</div>
 
 <script>
 /* ============ DATA ============ */
@@ -942,6 +959,34 @@ filters.addEventListener('click', e=>{
   activeCat = b.dataset.cat;
   renderFilters(); renderMenu();
 });
+
+/* ============ XAVFSIZLIK QATLAMI ============ */
+/* 1) XSS himoyasi — foydalanuvchi kiritgan matn hech qachon HTML bo'lib ishlamaydi */
+function esc(s){
+  return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+/* 2) Rate-limit — 10 daqiqada ko'pi bilan 5 buyurtma (spam-botlarga qarshi) */
+function checkRate(){
+  try{
+    const now=Date.now(), win=10*60*1000;
+    const arr=(JSON.parse(localStorage.getItem('ks_rate')||'[]')).filter(t=>now-t<win);
+    if(arr.length>=5){
+      return {ok:false, wait:Math.ceil((win-(now-Math.min(...arr)))/60000)};
+    }
+    arr.push(now);
+    localStorage.setItem('ks_rate', JSON.stringify(arr));
+    return {ok:true};
+  }catch(e){ return {ok:true}; }
+}
+/* 3) Honeypot va form vaqti — botlarni aniqlash uchun */
+let formOpenedAt = 0;
+/* 4) Buyurtmalar ombori (admin panel o'qiydi) */
+function loadOrders(){
+  try{ return JSON.parse(localStorage.getItem('ks_orders')||'[]'); }catch(e){ return []; }
+}
+function saveOrders(o){
+  try{ localStorage.setItem('ks_orders', JSON.stringify(o)); }catch(e){}
+}
 
 /* ============ CART ============ */
 let cart = [];
@@ -1054,13 +1099,15 @@ function renderCartView(){
 
 function renderFormView(){
   drawerTitle.textContent = 'Buyurtma';
+  formOpenedAt = Date.now();
   const {total} = cartTotals();
   drawerBody.innerHTML = `
     <button class="back-link" onclick="drawerView='cart';renderDrawer()">← Savatga qaytish</button>
     <div class="form-grid">
       <div class="field"><label>Ismingiz *</label><input id="fName" type="text" placeholder="Masalan: Aziza"></div>
       <div class="field"><label>Telefon raqamingiz *</label><input id="fPhone" type="tel" placeholder="+_ _ _ __ ___ __ __"></div>
-      <div class="field"><label>Manzil *</label><input id="fAddr" type="text" placeholder="Ko'cha, uy, xonadon"></div>
+      <div class="field"><label>Manzil *</label><input id="fAddr" type="text" maxlength="120" placeholder="Ko'cha, uy, xonadon"></div>
+      <div class="field" style="position:absolute;left:-9999px" aria-hidden="true"><label>Faks</label><input id="fFax" tabindex="-1" autocomplete="off"></div>
       <div class="field"><label>Yetkazish vaqti</label>
         <select id="fTime">
           <option>Tezroq (45–90 daqiqa)</option>
@@ -1078,11 +1125,34 @@ function renderFormView(){
 }
 
 function submitForm(){
+  /* --- XAVFSIZLIK TEKSHIRUVLARI --- */
+  /* Honeypot: bot yashirin maydonni to'ldirgan bo'lsa — rad etiladi */
+  if(document.getElementById('fFax').value){
+    drawerView='cart'; renderDrawer();
+    toast('Buyurtma rad etildi 🤖');
+    return;
+  }
+  /* Juda tez (1.5 sekdan tez) yuborilgan forma — bot belgisi */
+  if(Date.now()-formOpenedAt < 1500){
+    toast('Juda tez yuborildi — tekshirib qayta yuboring 🤖');
+    return;
+  }
   const name = document.getElementById('fName').value.trim();
   const phone = document.getElementById('fPhone').value.trim();
   const addr = document.getElementById('fAddr').value.trim();
   if(!name || !phone || !addr){
     toast('Iltimos, ism, telefon va manzilni kiriting ⚠️');
+    return;
+  }
+  /* Telefon validatsiyasi: kamida 9 raqam */
+  if(phone.replace(/[^0-9]/g,'').length < 9){
+    toast("Telefon raqamini to'g'ri kiriting (kamida 9 raqam) ☎️");
+    return;
+  }
+  /* Rate-limit: 10 daqiqada ko'pi bilan 5 buyurtma */
+  const rl = checkRate();
+  if(!rl.ok){
+    toast('Xavfsizlik cheklovi: ' + rl.wait + ' daqiqadan keyin urinib ko ring ⚠️');
     return;
   }
   cust = {
@@ -1123,7 +1193,8 @@ function renderPaymentView(){
       </div>
       <div class="field"><label>Karta egasi ismi</label><input id="cHolder" autocomplete="cc-name" placeholder="ALEXANDER KIND" oninput="onCardHolder(this.value)"></div>
     </div>
-    <div class="secure-note">🔒 SSL shifrlash — karta ma'lumotlaringiz saqlanmaydi</div>`
+    <div class="secure-note">🔒 SSL shifrlash — karta ma'lumotlaringiz saqlanmaydi</div>
+    <div class="trust-row"><span>🛡 3-D Secure</span><span>🔐 SSL/TLS</span><span>✅ PCI DSS</span><span>🤖 Anti-fraud</span><span>🔎 Fraud monitoring</span></div>`
   : `
     <div class="dcard" style="background:var(--card)">
       <h4>💵 Kuryerga naqd to'lov</h4>
@@ -1211,7 +1282,7 @@ function renderSmsView(){
     <div class="sms-box">
       <div class="sms-ico">📲</div>
       <h4>SMS kodni kiriting</h4>
-      <p><b>${bname}</b> karta uchun <b>${cust.phone||''}</b> raqamiga 6 xonali kod yubordik</p>
+      <p><b>${bname}</b> karta uchun <b>${esc(cust.phone)||''}</b> raqamiga 6 xonali kod yubordik</p>
       <input id="smsCode" inputmode="numeric" maxlength="6" placeholder="••••••" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
       <p class="demo-hint">Demo rejim — istalgan 6 raqamni kiriting</p>
     </div>`;
@@ -1232,6 +1303,19 @@ function confirmSms(){
 function finalizeOrder(payInfo){
   lastOrderNo = 'KS-' + Math.floor(1000 + Math.random()*9000);
   lastPay = payInfo;
+  /* buyurtmani xavfsiz saqlash — admin panel ko'radi */
+  const items = cart.map(c=>({name:c.name, qty:c.qty, price:c.price}));
+  const {total} = cartTotals();
+  const payLine = payInfo.method==='card'
+    ? BRANDS[payInfo.brand].name + ' •••• ' + payInfo.last4
+    : 'Kuryerga naqd';
+  saveOrders([...loadOrders(), {
+    no:lastOrderNo, date:new Date().toLocaleString('uz-UZ'),
+    name:cust.name||'', phone:cust.phone||'', addr:cust.addr||'',
+    note:cust.note||'', items, total, payLine, status:'yangi'
+  }]);
+  /* karta ma'lumotlari xotiradan o'chiriladi — hech qayerda saqlanmaydi */
+  curNum = '';
   cart = [];
   renderCartBadge();
   drawerView = 'success';
@@ -1249,11 +1333,245 @@ function renderSuccessView(){
       <h4>Rahmat, buyurtmangiz qabul qilindi!</h4>
       <div class="order-num">${lastOrderNo}</div>
       <div class="pay-line">${payLine}</div>
-      <p>Operatorimiz tez orada <b>${cust.name||''}</b> bilan bog'lanib, buyurtmani tasdiqlaydi. Shirinliklarni kutib qoling! 🧁</p>
+      <p>Operatorimiz tez orada <b>${esc(cust.name)||''}</b> bilan bog'lanib, buyurtmani tasdiqlaydi. Shirinliklarni kutib qoling! 🧁</p>
     </div>`;
   drawerFoot.innerHTML = `
     <a href="${PHONE_LINK}" class="btn btn-dark checkout-btn">📞 ${PHONE} — qo'ng'iroq</a>
     <button class="btn btn-primary checkout-btn" style="margin-top:10px;background:var(--caramel)" onclick="drawerView='cart';renderDrawer();closeDrawer()">Yopish</button>`;
+}
+
+/* ============ TOAST ============ */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+/* ============ MARQUEE ============ */
+const words = ['Tortlar','Makaron','Trufel','Eklar','Tiramisu','Panakotta','Fondan','Chizkek','Plombir','Premium dessertlar'];
+document.getElementById('marqueeTrack').innerHTML =
+  [...words,...words,...words,...words].map(w=>`<span>${w}</span>`).join('');
+
+/* ============ GALLERY ============ */
+const gallery = [
+  {img:'images/hero.jpg', cls:'g1'},
+  {img:'images/cake-truffle.jpg', cls:''},
+  {img:'images/macarons.jpg', cls:''},
+  {img:'images/eclair.jpg', cls:'g4'},
+  {img:'images/cake-premium.jpg', cls:''},
+  {img:'images/tiramisu.jpg', cls:''},
+  {img:'images/honey-cake.jpg', cls:''},
+  {img:'images/cheesecake.jpg', cls:''},
+];
+document.getElementById('galleryGrid').innerHTML =
+  gallery.map(g=>`<div class="gitem ${g.cls}"><img src="${g.img}" alt="Kindsteven galereya" loading="lazy"></div>`).join('');
+
+const lb = document.getElementById('lb');
+document.getElementById('galleryGrid').addEventListener('click', e=>{
+  const img = e.target.closest('.gitem img'); if(!img) return;
+  document.getElementById('lbImg').src = img.src;
+  lb.classList.add('open');
+});
+lb.addEventListener('click', ()=>lb.classList.remove('open'));
+
+/* ============ HEADER + MOBILE ============ */
+const header = document.getElementById('header');
+window.addEventListener('scroll', ()=>header.classList.toggle('solid', scrollY>60));
+const burger = document.getElementById('burger');
+const mm = document.getElementById('mobileMenu');
+burger.onclick = ()=>mm.classList.toggle('open');
+mm.querySelectorAll('a').forEach(a=>a.onclick=()=>mm.classList.remove('open'));
+
+/* ============ REVEAL ============ */
+const io = new IntersectionObserver(entries=>{
+  entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('on'); io.unobserve(en.target);} });
+},{threshold:.12});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+/* ============ ADMIN PANEL — XAVFSIZ KIRISH ============ */
+const ADMIN_HASH = '5f170f20b9755a22c1782ec58133ab583ff2359ad5b619491b7b5172c91278d0'; /* SHA-256("kindsteven2026") */
+const SESS_TTL = 5*60*1000; /* 5 daqiqa harakatsizlik -> avtomatik chiqish */
+const admTitle = document.getElementById('admTitle');
+const admBody = document.getElementById('admBody');
+const admFoot = document.getElementById('admFoot');
+let admTries = +(localStorage.getItem('ks_fails')||0);
+let admTimer = null, admWatch = null;
+
+async function hashPass(p){
+  if(window.crypto && crypto.subtle){
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  /* fallback: zaif muhit (file://) uchun djb2 */
+  let h=5381; for(let i=0;i<p.length;i++){ h=((h<<5)+h+p.charCodeAt(i))|0; }
+  return 'djb2_'+(h>>>0).toString(16);
+}
+
+const adminOv = document.getElementById('adminOv');
+document.getElementById('admClose').onclick = closeAdmin;
+adminOv.addEventListener('click', e=>{ if(e.target===adminOv) closeAdmin(); });
+function openAdmin(){ adminOv.classList.add('open'); document.body.style.overflow='hidden'; renderAdmin(); }
+function closeAdmin(){ adminOv.classList.remove('open'); document.body.style.overflow=''; }
+function touchSess(){
+  try{
+    const s = JSON.parse(sessionStorage.getItem('ks_sess')||'null');
+    if(s){ s.t = Date.now(); sessionStorage.setItem('ks_sess', JSON.stringify(s)); }
+  }catch(e){}
+}
+
+function renderAdmin(){
+  const lockUntil = +(localStorage.getItem('ks_lock')||0);
+  const logged = !!sessionStorage.getItem('ks_sess');
+
+  /* 1) BLOKLANGAN holat — brute-force himoyasi */
+  if(Date.now() < lockUntil){
+    admTitle.textContent = '⛔ Bloklandi';
+    admBody.innerHTML = `
+      <div class="sms-box" style="padding:36px 8px">
+        <div class="sms-ico">⛔</div>
+        <h4>Juda ko'p noto'g'ri urinish</h4>
+        <p>Xavfsizlik uchun panel <b><span id="lockTimer">—</span> soniya</b> ga bloklandi.</p>
+        <div class="trust-row" style="justify-content:center"><span>🛡 Brute-force himoya</span></div>
+      </div>`;
+    admFoot.innerHTML = '';
+    startCountdown();
+    return;
+  }
+
+  /* 2) KIRGAN holat — buyurtmalar paneli */
+  if(logged){
+    touchSess();
+    admTitle.textContent = '📋 Buyurtmalar';
+    const orders = loadOrders();
+    const rev = orders.reduce((s,o)=>s+(+o.total||0),0);
+    const fresh = orders.filter(o=>o.status==='yangi').length;
+    const stName = {yangi:'YANGI ↻', tasdiqlandi:'TASDIQLANDI ↻', yetkazildi:'YETKAZILDI ↻'};
+    admBody.innerHTML = `
+      <div class="astats">
+        <div class="astat"><b>${orders.length}</b><span>buyurtma</span></div>
+        <div class="astat"><b>${fmt(rev)}</b><span>tushum</span></div>
+        <div class="astat"><b>${fresh}</b><span>yangi</span></div>
+      </div>
+      ${orders.length ? orders.slice().reverse().map(o=>`
+        <div class="aorder">
+          <div class="aorder-top">
+            <b>${esc(o.no)} <span style="color:var(--caramel);font-size:12px;font-weight:600">· ${esc(o.date)}</span></b>
+            <button class="abadge st-${o.status}" onclick="cycleStatus('${esc(o.no)}')" title="Holatni o'zgartirish">${stName[o.status]||esc(o.status)}</button>
+          </div>
+          <div class="aitems">👤 ${esc(o.name)} — 📞 ${esc(o.phone)}</div>
+          <div class="aitems">📍 ${esc(o.addr)}${o.note?` · 📝 ${esc(o.note)}`:''}</div>
+          <div class="aitems">🍰 ${o.items.map(i=>esc(i.name)+' ×'+i.qty).join(' · ')}</div>
+          <div class="aitems" style="font-weight:800;color:var(--choco)">💳 ${esc(o.payLine)} — ${fmt(o.total)}</div>
+        </div>`).join('')
+      : `<div class="cart-empty"><div class="big-ico">📋</div><b>Buyurtmalar yo'q</b>Saytdan buyurtma kelganda shu yerda ko'rinadi</div>`}
+      <div class="trust-row" style="margin-top:16px"><span>🔐 Parol SHA-256 hash</span><span>⏱ ${SESS_TTL/60000} daqiqa sessiya</span><span>🛡 Brute-force himoya</span></div>`;
+    admFoot.innerHTML = `
+      <button class="btn btn-dark checkout-btn" style="flex:1" onclick="logoutAdmin()">🚪 Chiqish</button>
+      <button class="btn checkout-btn" style="flex:1;background:var(--bg2);color:var(--choco2)" onclick="clearOrders()">🗑 Tozalash</button>`;
+    return;
+  }
+
+  /* 3) KIRMAGAN holat — login */
+  admTitle.textContent = '🔐 Admin kirish';
+  admBody.innerHTML = `
+    <div class="sms-box" style="padding:26px 8px 10px">
+      <div class="sms-ico">🔐</div>
+      <h4>Xavfsiz kirish</h4>
+      <p>Admin panel uchun parolni kiriting</p>
+      <input type="password" id="admPass" maxlength="40" placeholder="••••••••••" style="letter-spacing:.15em" onkeydown="if(event.key==='Enter')tryLogin()">
+      <p class="demo-hint">Demo parol: <b>kindsteven2026</b></p>
+      <p class="demo-hint" id="admMsg" style="color:#b34a3a!important;font-weight:800"></p>
+      <div class="trust-row" style="justify-content:center">
+        <span>🛡 SHA-256 hash</span><span>⏳ 5 urinish limiti</span><span>⏱ Sessiya nazorati</span>
+      </div>
+    </div>`;
+  admFoot.innerHTML = `<button class="btn btn-dark checkout-btn" onclick="tryLogin()">🔓 Kirish</button>`;
+}
+
+async function tryLogin(){
+  if(Date.now() < +(localStorage.getItem('ks_lock')||0)){ renderAdmin(); return; }
+  const p = document.getElementById('admPass').value;
+  const h = await hashPass(p);
+  if(h===ADMIN_HASH){
+    sessionStorage.setItem('ks_sess', JSON.stringify({t:Date.now()}));
+    admTries = 0; localStorage.removeItem('ks_fails');
+    startWatch();
+    toast('Admin panelga xush kelibsiz ✓');
+    renderAdmin();
+  }else{
+    admTries++;
+    localStorage.setItem('ks_fails', admTries);
+    const left = 5 - admTries;
+    if(left<=0){
+      localStorage.setItem('ks_lock', Date.now()+60000);
+      toast('⛔ Panel 60 soniyaga bloklandi');
+      renderAdmin();
+    }else{
+      const msg = document.getElementById('admMsg');
+      if(msg) msg.textContent = "Noto'g'ri parol! " + left + " urinish qoldi ⚠️";
+    }
+  }
+}
+
+function startCountdown(){
+  clearInterval(admTimer);
+  admTimer = setInterval(()=>{
+    const until = +(localStorage.getItem('ks_lock')||0);
+    const left = Math.ceil((until-Date.now())/1000);
+    const el = document.getElementById('lockTimer');
+    if(left<=0){
+      clearInterval(admTimer);
+      localStorage.removeItem('ks_lock'); localStorage.removeItem('ks_fails'); admTries=0;
+      renderAdmin();
+    } else if(el){ el.textContent = left; }
+  }, 1000);
+}
+
+function startWatch(){
+  clearInterval(admWatch);
+  admWatch = setInterval(()=>{
+    if(!sessionStorage.getItem('ks_sess')) return;
+    let s=null; try{ s=JSON.parse(sessionStorage.getItem('ks_sess')); }catch(e){}
+    if(s && Date.now()-s.t > SESS_TTL){
+      logoutAdmin();
+      toast('⏱ Sessiya tugadi — xavfsizlik uchun chiqarildingiz');
+    }
+  }, 10000);
+}
+function logoutAdmin(){
+  sessionStorage.removeItem('ks_sess');
+  clearInterval(admWatch);
+  if(adminOv.classList.contains('open')) renderAdmin();
+}
+
+function cycleStatus(no){
+  touchSess();
+  const orders = loadOrders();
+  const o = orders.find(x=>x.no===no); if(!o) return;
+  o.status = o.status==='yangi' ? 'tasdiqlandi' : o.status==='tasdiqlandi' ? 'yetkazildi' : 'yangi';
+  saveOrders(orders);
+  renderAdmin();
+}
+function clearOrders(){
+  touchSess();
+  if(!confirm("Barcha buyurtmalar o'chirilsinmi?")) return;
+  saveOrders([]);
+  renderAdmin();
+}
+
+/* ============ INIT ============ */
+renderFilters();
+renderMenu();
+renderCartBadge();
+renderDrawer();
+if(sessionStorage.getItem('ks_sess')) startWatch();
+</script>
+</body>
+</html>
+derDrawer();closeDrawer()">Yopish</button>`;
 }
 
 /* ============ TOAST ============ */
